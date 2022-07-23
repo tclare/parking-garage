@@ -1,9 +1,16 @@
-import { StyleSheet, Text, View, Pressable } from "react-native";
-import { FontAwesome } from '@expo/vector-icons';
+import { useEffect, useRef, useState } from "react";
+import { Animated, StyleSheet, Text, View, Pressable, Easing, ActivityIndicator } from "react-native";
 import { useFonts } from '@expo-google-fonts/inter';
 import { Inter_900Black, Inter_800ExtraBold, Inter_300Light, Inter_400Regular, Inter_500Medium, Inter_200ExtraLight, Inter_600SemiBold } from '@expo-google-fonts/inter';
+import * as Progress from 'react-native-progress';
+import { FontAwesome } from '@expo/vector-icons';
+
 
 export default function InAppNotification(props) {
+    let notificationOpacity = useRef(new Animated.Value(1)).current;
+    let notificationTop = useRef(new Animated.Value(0)).current;
+    let [progressCircleProgress, setProgressCircleProgress] = useState(0);
+    
     let [fontsLoaded] = useFonts({
         Inter_900Black,
         Inter_800ExtraBold,
@@ -14,32 +21,78 @@ export default function InAppNotification(props) {
         Inter_200ExtraLight
     });
 
+    useEffect(() => {
+        let progressCircleAnimationInterval, millisecondsElapsed = 0;
+        Animated.timing(notificationTop, {
+            toValue: 106,
+            duration: 500,
+            easing: Easing.linear,
+            useNativeDriver: false
+        }).start(() => {
+            if (props.progressTime > 0 && props.progressTime < Infinity) {
+                progressCircleAnimationInterval = setInterval(() => {
+                    if (millisecondsElapsed >= props.progressTime) {
+                        clearInterval(progressCircleAnimationInterval); 
+                        notificationCancelButtonPressed(notificationOpacity, props.cancelCallback)();
+                        return;
+                    }
+                    millisecondsElapsed += 50;
+                    setProgressCircleProgress(millisecondsElapsed / props.progressTime);
+                }, 50)
+            }
+        });
+        return () => {
+            clearInterval(progressCircleAnimationInterval);
+            console.log('tearing down component!')
+        };
+    }, [])
+
     if (!fontsLoaded) return null;
 
     return <>
-        <View style={ styles.topLevelView }>
+        <Animated.View style={{ 
+            ... styles.topLevelView,
+            opacity: notificationOpacity,
+            top: notificationTop
+        }}>
             <View style={ styles.colorWallAndTextView }>
                 <View style={ styles.boldColorWall}></View>
                 <Text style={ styles.notificationTextView }>
-                    <Text style={ styles.notificationTextBold }>{props.boldText}: </Text>
+                    <Text style={ styles.notificationTextBold }>{props.boldText} </Text>
                     <Text style={ styles.notificationTextRegular }>{props.regularText}</Text>
                 </Text>
             </View>
             <View style={ styles.cancelButtonView }>
-                {/* <ActivityIndicator size="small" color="black"></ActivityIndicator> */}
-                <Pressable 
-                    style={({ pressed }) => [
-                        pressed ? { opacity: 0.8 } : {}
-                    ]} 
-                    onPress={ props.cancelCallback }
-                >
-                    <FontAwesome name="close" size={24} color="black" />
-                </Pressable>
+                {
+                    props.progressTime <= 0 
+                        ? <Pressable 
+                            style={({ pressed }) => [ pressed ? { opacity: 0.8 } : {}]} 
+                            onPress={ notificationCancelButtonPressed(notificationOpacity, props.cancelCallback) }
+                        >
+                            <FontAwesome name="close" size={24} color="black" />
+                        </Pressable>
+                    : props.progressTime < Infinity
+                        ?  <Progress.Circle 
+                            size={20}
+                            thickness={2}
+                            duration={100}
+                            progress={progressCircleProgress}
+                        ></Progress.Circle>
+                    : <ActivityIndicator size="small" color="black"></ActivityIndicator>
+                }
             </View>
-        </View>
+        </Animated.View>
     </>
 }
 
+export function notificationCancelButtonPressed(notificationOpacity, cancelCallback) {
+    return () => Animated.timing(notificationOpacity, {
+      toValue: 0,
+      duration: 500,
+      easing: Easing.linear,
+      useNativeDriver: false
+    }).start(cancelCallback);
+}
 
 /* Suggested props: 
     - boldText (string)
@@ -97,6 +150,8 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.5,
         shadowRadius: 2,  
         elevation: 5,
-        paddingRight: 30
+        paddingRight: 30,
+        position: "absolute",
+        width: "85%"
     }
 })
