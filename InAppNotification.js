@@ -8,9 +8,10 @@ import { FontAwesome } from '@expo/vector-icons';
 
 export default function InAppNotification(props) {
     let notificationOpacity = useRef(new Animated.Value(1)).current;
-    let notificationTop = useRef(new Animated.Value(0)).current;
+    let notificationTop = useRef(new Animated.Value(
+        props.animateIn === false ? 106 : 0
+    )).current;
     let [progressCircleProgress, setProgressCircleProgress] = useState(0);
-    
     let [fontsLoaded] = useFonts({
         Inter_900Black,
         Inter_800ExtraBold,
@@ -23,6 +24,9 @@ export default function InAppNotification(props) {
 
     useEffect(() => {
         let progressCircleAnimationInterval, millisecondsElapsed = 0;
+        // props.eventEmitter.addListener('refresh', () => {
+        //     console.log('how about that refresh?')
+        // });
         Animated.timing(notificationTop, {
             toValue: 106,
             duration: 500,
@@ -33,7 +37,7 @@ export default function InAppNotification(props) {
                 progressCircleAnimationInterval = setInterval(() => {
                     if (millisecondsElapsed >= props.progressTime) {
                         clearInterval(progressCircleAnimationInterval); 
-                        notificationCancelButtonPressed(notificationOpacity, props.cancelCallback)();
+                        phaseNotificationOut(notificationOpacity, props.cancelCallback)();
                         return;
                     }
                     millisecondsElapsed += 50;
@@ -43,7 +47,6 @@ export default function InAppNotification(props) {
         });
         return () => {
             clearInterval(progressCircleAnimationInterval);
-            console.log('tearing down component!')
         };
     }, [])
 
@@ -67,7 +70,7 @@ export default function InAppNotification(props) {
                     props.progressTime <= 0 
                         ? <Pressable 
                             style={({ pressed }) => [ pressed ? { opacity: 0.8 } : {}]} 
-                            onPress={ notificationCancelButtonPressed(notificationOpacity, props.cancelCallback) }
+                            onPress={ phaseNotificationOut(notificationOpacity, props.cancelCallback) }
                         >
                             <FontAwesome name="close" size={24} color="black" />
                         </Pressable>
@@ -85,7 +88,7 @@ export default function InAppNotification(props) {
     </>
 }
 
-export function notificationCancelButtonPressed(notificationOpacity, cancelCallback) {
+export function phaseNotificationOut(notificationOpacity, cancelCallback) {
     return () => Animated.timing(notificationOpacity, {
       toValue: 0,
       duration: 500,
@@ -93,18 +96,6 @@ export function notificationCancelButtonPressed(notificationOpacity, cancelCallb
       useNativeDriver: false
     }).start(cancelCallback);
 }
-
-/* Suggested props: 
-    - boldText (string)
-    - regularText (string)
-    - dismissable (if true, waits or user to dismiss, and progress time is required. if not, dismisses as soon as a progress bar is over)
-    - progressTime (
-        if t <= 0, no progress time, just show X. 
-        else if 0 < t < Infinity, create a progress spinner waiting t milliseconds.
-        else if t = Infinity, create a spinner that will load infinitely. Some other source (maybe an
-        inline link or something) will dismiss the notification.
-    )
-*/
 
 
 const styles = StyleSheet.create({

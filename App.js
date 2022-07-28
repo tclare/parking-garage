@@ -2,21 +2,28 @@ import { useEffect, useState } from "react";
 import { StyleSheet, Text, View, Pressable, RefreshControl, ScrollView } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import InAppNotification from './InAppNotification';
+import ActionSheet from './ActionSheet';
+import { SheetManager } from "react-native-actions-sheet";
 import * as Font from 'expo-font';
+import Constants from "expo-constants";
 
 export default function App() {
   const [refreshing, setRefreshing] = useState(false);
-  const [showNotification, setShowNotification ] = useState(true);
-  const [notificationConfig, setNotificationConfig ] = useState({
-    boldText: 'Hey Now!',
-    regularText: "You're a rock star!",
-    progressTime: 0
-  })
+  const [showNotification, setShowNotification] = useState(true);
+  const [notificationConfig, setNotificationConfig] = useState({
+    boldText: 'Hang Tight!',
+    regularText: 'Fetching up to date car floor.',
+    progressTime: Infinity,
+    animateIn: false
+  });
+  const [parkingFloor, setParkingFloor] = useState('－');
+  const [lastParked, setLastParked] = useState('－');
   const [fontsLoaded, setFontsLoaded ] = useState(false);
 
   useEffect(() => {
     loadFontsAsync(setFontsLoaded);
-  });
+    loadParkingFloor(setParkingFloor, setLastParked, setShowNotification, setNotificationConfig);
+  }, []);
 
   return (
     fontsLoaded 
@@ -26,7 +33,7 @@ export default function App() {
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
-              onRefresh={onRefresh(setShowNotification, setNotificationConfig, setRefreshing)}
+              onRefresh={onRefresh(setParkingFloor, setLastParked, setShowNotification, setNotificationConfig, setRefreshing)}
             ></RefreshControl>
           }
         >
@@ -37,16 +44,18 @@ export default function App() {
             regularText={notificationConfig.regularText}
             progressTime={notificationConfig.progressTime}
             cancelCallback={notificationCancelled(setShowNotification)}
+            animateIn={notificationConfig.animateIn}
             key={notificationConfig.date}
+            // eventEmitter={eventEmitter}
           ></InAppNotification>
         : <></>
       }
 
       <Text style={styles.title}>THE CAR IS ON</Text>
-      <Text style={styles.location}>P3</Text>
+      <Text style={styles.location}>{parkingFloor}</Text>
       <Text style={styles.timestamp}>
         <Text style={styles.timestampText}>Last parked </Text>
-        <Text style={styles.timestampValue}>1d ago</Text>
+        <Text style={styles.timestampValue}>{lastParked}</Text>
       </Text>
 
       <View style={styles.buttonCollectionView}>
@@ -55,25 +64,17 @@ export default function App() {
             pressed ? { opacity: 0.8 } : {},
             styles.buttonPrimaryPressableStyle
           ]} 
-          onPress={ () => primaryButtonPress(notificationOpacity, setShowNotification) }
+          onPress={ () => SheetManager.show('bottom-action-sheet') }
         >
           <View style={ styles.buttonPrimaryView }>
             <FontAwesome name="car" size={24} color="#fff" />
           </View>
           <Text style={ styles.buttonPrimaryTextStyle }>PARK CAR</Text>
         </Pressable>
-        <View style={ styles.secondaryButtonView }>
-          <Text style={ styles.secondaryButtonUnclickableText }>Or, </Text>
-          <Pressable 
-            style={({ pressed }) => [
-              pressed ? { opacity: 0.8 } : {}
-            ]} 
-            onPress={ secondaryButtonPress(setShowNotification, setNotificationConfig) }
-          >
-            <Text style={ styles.secondaryButtonClickableText }>Enter Floor Manually</Text>
-          </Pressable>
-        </View>
       </View>
+      <ActionSheet 
+        click={ updateParkingFloor(setParkingFloor, setLastParked, setShowNotification, setNotificationConfig) }
+      ></ActionSheet>
     </ScrollView>
     : <></>
   );
@@ -114,31 +115,75 @@ export async function loadFontsAsync(setFontsLoaded) {
   setFontsLoaded(true);
 }
 
+export async function loadParkingFloor(
+  setParkingFloor, 
+  setLastParked,
+  setShowNotification, 
+  setNotificationConfig,
+) {
+  return fetch(
+    Constants.manifest.extra.apiGatewayInvokeUrl, 
+    { headers: { Authorization: Constants.manifest.extra.apiGatewayAuthorization }}
+  )
+  .then(resp => resp.json())
+  .then(json => {
+    setParkingFloor(json.floor);
+    setLastParked(json.lastParked);
+    showNewNotification(setShowNotification, setNotificationConfig, {
+      boldText: 'Success!',
+      regularText: 'Fetched most up to date car location.',
+      progressTime: 5000
+    });
+    return json;
+  })
+}
+
+export function updateParkingFloor(
+  setParkingFloor,
+  setLastParked,
+  setShowNotification,
+  setNotificationConfig
+) {
+  return (floor) => async () => {
+    await SheetManager.hide("bottom-action-sheet");
+    let updateResponse = await fetch(
+      Constants.manifest.extra.apiGatewayInvokeUrl,
+      { 
+        method: 'PUT', 
+        headers: {
+          'Content-Type': 'text/plain',
+          'Authorization': Constants.manifest.extra.apiGatewayAuthorization
+        },
+        body: floor
+      }
+    );
+    setParkingFloor(floor);
+    setLastParked("now");
+    showNewNotification(setShowNotification, setNotificationConfig, {
+      boldText: "Success!",
+      regularText: "Car floor successfully updated.",
+      progressTime: 5000
+    });
+  }
+}
+
 export function notificationCancelled(setShowNotification) {
   return () => setShowNotification(false);
 }
 
 export function showNewNotification(setShowNotification, setNotificationConfig, config) {
   setShowNotification(false);
-  setImmediate(() => {
+  setTimeout(() => {
     setNotificationConfig(config);
     setShowNotification(true);
-  })
+  }, 500)
 }
 
-export function onRefresh(setShowNotification, setNotificationConfig, setRefreshing) {
+export function onRefresh(setParkingFloor, setLastParked, setShowNotification, setNotificationConfig, setRefreshing) {
   return () => {
     setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);  
-      setTimeout(() => {
-        showNewNotification(setShowNotification, setNotificationConfig, {
-          boldText: 'Hello!',
-          regularText: 'This is what is supposed to be shown when we refresh.',
-          progressTime: 5000,
-        });
-      }, 250);
-    }, 1000);
+    loadParkingFloor(setParkingFloor, setLastParked, setShowNotification, setNotificationConfig, setRefreshing)
+      .then(() => setRefreshing(false))
   };
 }
 
@@ -149,7 +194,7 @@ const styles = StyleSheet.create({
   },
   buttonCollectionView: {
     position: 'absolute',
-    bottom: 100,
+    bottom: 106,
   },
   buttonPrimaryView: {
     marginRight: 12

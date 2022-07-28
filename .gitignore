@@ -1,4 +1,9 @@
-node_modules/
+# package directories
+node_modules
+jspm_packages
+
+# Serverless directories
+.serverlessnode_modules/
 .expo/
 dist/
 npm-debug.*
