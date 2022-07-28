@@ -1,0 +1,23 @@
+{
+  "name": "put-car-floor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "handler.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tclare/parking-garage.git"
+  },
+  "author": "Tommy Clare",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tclare/parking-garage/issues"
+  },
+  "homepage": "https://github.com/tclare/parking-garage#readme",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.135.0"
+  }
+}

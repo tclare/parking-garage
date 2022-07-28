@@ -1,0 +1,69 @@
+service: serverless
+
+frameworkVersion: '3'
+
+plugins:
+  - serverless-enable-api-logs
+
+provider:
+  name: aws
+  runtime: nodejs16.x
+  stage: dev
+  region: us-east-1
+  timeout: 10
+  httpApi:
+    authorizers:
+      CarFloorAuthorizer:
+        type: request
+        payloadVersion: '2.0'
+        functionName: CarFloorAuthorizer
+        enableSimpleResponses: true
+  iam:
+    role:
+      statements:
+        - Effect: "Allow"
+          Action:
+            - "s3:GetObject"
+            - "s3:PutObject"
+          Resource: "arn:aws:s3:::${env:CAR_PARK_S3_BUCKET}/*"
+
+functions:
+  CarFloorGet:
+    name: CarFloorGet
+    handler: get-car-floor/handler.getCarFloor
+    description: "This lambda retrieves the current floor of my car inside the Latitude Parking Garage."
+    environment:
+      CAR_PARK_S3_BUCKET: ${env:CAR_PARK_S3_BUCKET}
+      CAR_PARK_S3_KEY: ${env:CAR_PARK_S3_KEY}
+    events:
+     - httpApi:
+         path: /car/floor
+         method: get
+         authorizer: 
+          name: CarFloorAuthorizer
+  CarFloorPut:
+    name: CarFloorPut
+    handler: put-car-floor/handler.putCarFloor
+    description: "This lambda updates the current floor of my car inside the Latitude Parking Garage."
+    environment:
+      CAR_PARK_S3_BUCKET: ${env:CAR_PARK_S3_BUCKET}
+      CAR_PARK_S3_KEY: ${env:CAR_PARK_S3_KEY}
+    events:
+      - httpApi:
+          path: /car/floor
+          method: put
+          authorizer: 
+            name: CarFloorAuthorizer
+  CarFloorAuthorizer: 
+    name: CarFloorAuthorizer
+    handler: authorizer/handler.authorizerHandler
+    description: "This lambda function controls the authorization of outside resources attempting to access our parking garage service."
+    environment:
+      CAR_PARK_AUTHORIZATION: ${env:CAR_PARK_AUTHORIZATION}
+
+resources:
+ Resources:
+   NewResource:
+     Type: AWS::S3::Bucket
+     Properties:
+       BucketName: latitude-car-floor-bucket
