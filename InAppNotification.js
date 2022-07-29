@@ -4,7 +4,7 @@ import { useFonts } from '@expo-google-fonts/inter';
 import { Inter_900Black, Inter_800ExtraBold, Inter_300Light, Inter_400Regular, Inter_500Medium, Inter_200ExtraLight, Inter_600SemiBold } from '@expo-google-fonts/inter';
 import * as Progress from 'react-native-progress';
 import { FontAwesome } from '@expo/vector-icons';
-
+import EventEmitter from "react-native-eventemitter";
 
 export default function InAppNotification(props) {
     let notificationOpacity = useRef(new Animated.Value(1)).current;
@@ -24,9 +24,7 @@ export default function InAppNotification(props) {
 
     useEffect(() => {
         let progressCircleAnimationInterval, millisecondsElapsed = 0;
-        // props.eventEmitter.addListener('refresh', () => {
-        //     console.log('how about that refresh?')
-        // });
+        EventEmitter.on('blur-notification', phaseNotificationOut(notificationOpacity, props.cancelCallback));
         Animated.timing(notificationTop, {
             toValue: 106,
             duration: 500,

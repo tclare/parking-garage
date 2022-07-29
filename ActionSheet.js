@@ -3,30 +3,37 @@ import ActionSheet, {
 } from "react-native-actions-sheet";
 import { View, Text, StyleSheet } from "react-native";
 import ActionSheetButton from './ActionSheetButton';
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import * as Font from 'expo-font';
 
 registerSheet("bottom-action-sheet", ActionSheetComponent);
 
 export default function ActionSheetComponent(props) {
-    useEffect(() => { loadFontsAsync(); }, []);
+
+    const [ width, setWidth ] = useState(0);
+
+    useEffect(() => { 
+        loadFontsAsync(); 
+    }, []);
+    
     return (
         <ActionSheet 
             id="bottom-action-sheet"
             containerStyle={styles.actionSheet}
         >
-        <View style={styles.actionSheetView}>
-            <View style={styles.textContainerView}>
-                <Text style={styles.title}>Welcome Back!</Text>
-                <Text style={styles.subtitle}>Which floor is the car on?</Text>
+            <View style={styles.actionSheetView}>
+                <View style={styles.textContainerView}>
+                    <Text style={styles.title}>Welcome Back!</Text>
+                    <Text style={styles.subtitle}>Which floor is the car on?</Text>
+                </View>
+                <View style={styles.actionSheetButtonsView} onLayout={ (event) => { setWidth(event.nativeEvent.layout.width)
+                } }>
+                    <ActionSheetButton text="P1" click={props.click} parentWidth={width}/>
+                    <ActionSheetButton text="P2" click={props.click} parentWidth={width}/>
+                    <ActionSheetButton text="P3" click={props.click} parentWidth={width}/>
+                    <ActionSheetButton text="P4" click={props.click} parentWidth={width}/>
+                </View>
             </View>
-            <View style={styles.actionSheetButtonsView}>
-                <ActionSheetButton text="P1" click={props.click}/>
-                <ActionSheetButton text="P2" click={props.click}/>
-                <ActionSheetButton text="P3" click={props.click}/>
-                <ActionSheetButton text="P4" click={props.click}/>
-            </View>
-        </View>
         </ActionSheet>
     );
 }

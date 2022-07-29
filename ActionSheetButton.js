@@ -7,11 +7,15 @@ export default function ActionSheetButton(props) {
     useEffect(() => { loadFontsAsync(); }, []);
     return (
         <Pressable
-            style={({ pressed }) => [ pressed ? { opacity: 0.8 } : {}]} 
+            style={({ pressed }) => [
+                pressed ? { opacity: 0.8 } : {}
+            ]} 
             onPress={ props.click(props.text) }
         >
             <View 
                 style={{ 
+                    width: 0.22 * props.parentWidth,
+                    height: 0.22 * props.parentWidth,
                     ... styles.view, 
                     backgroundColor: computeBackgroundColor(props.text)
                 }}
@@ -40,8 +44,6 @@ export async function loadFontsAsync(setFontsLoaded) {
 
 const styles = StyleSheet.create({
     view: {
-        width: 75,
-        height: 75,
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
