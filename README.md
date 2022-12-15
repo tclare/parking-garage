@@ -1,7 +1,7 @@
 ## Welcome to Parking Garage!
 
 
-<img src="https://github.com/tclare/parking-garage/blob/main/assets/demo.gif" width="300>
+<img src="https://github.com/tclare/parking-garage/blob/main/assets/demo.gif" width="300">
 
 
 #### 💡 Background
