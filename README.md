@@ -1,5 +1,9 @@
 ## Welcome to Parking Garage!
 
+
+![](https://github.com/tclare/parking-garage/blob/main/assets/demo.gif)
+
+
 #### 💡 Background
 
 This is a fun little side project of mine for learning React Native. For background: my roommate and I share a car. We always have difficulty remembering which floor the car is parked on (our parking garage has four floors). Thus, the idea for parking garage was born.
