@@ -16,4 +16,4 @@ The app consists of a single screen displaying which floor our car is on, as wel
 
 The frontend of the App is scaffolded using a few basic React Native components.
 The current floor the car is parked on is hosted in a private AWS S3 bucket.
-The backend functionality for parking the car is provided by an AWS Lambda function, hidden behind an Authorizer.💡
+The backend functionality for parking the car is provided by AWS Lambda functions.
